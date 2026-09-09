@@ -14,6 +14,8 @@
 #define BALL_SIZE 3u
 #define BALL_INTERVAL_MS 35u
 #define PADDLE_STEP 4u
+#define PADDLE_MOTION_MS 120u
+#define FIREWORK_INTERVAL_MS 180u
 #define PADDLE_W 22u
 #define PADDLE_Y 57u
 #define BRICK_COLS 16u
@@ -29,7 +31,10 @@ static uint8_t fb[1024], dirty, dirty_first[8], dirty_last[8];
 static uint8_t bricks[BRICK_ROWS][BRICK_COLS];
 static uint8_t paddle_x, bricks_left;
 static int8_t ball_x, ball_y, ball_dx, ball_dy;
-static uint8_t ball_x_accumulator;
+static uint8_t ball_x_accumulator, ball_x_rate;
+static int8_t paddle_motion;
+static uint32_t paddle_motion_deadline, firework_deadline;
+static uint8_t firework_frame;
 static state_t state;
 static uint32_t motor_deadline;
 static uint8_t motor_running;
@@ -275,7 +280,8 @@ static void reset_game(void)
     paddle_x = (W - PADDLE_W) / 2u;
     ball_x = (int8_t)(paddle_x + (PADDLE_W - BALL_SIZE) / 2u);
     ball_y = PADDLE_Y - BALL_SIZE;
-    ball_dx = 0; ball_dy = 0; ball_x_accumulator = 0u;
+    ball_dx = 0; ball_dy = 0; ball_x_accumulator = 0u; ball_x_rate = 3u;
+    paddle_motion = 0;
     paddle(1u); ball(1u);
     motor_running = 0u; motor_set(0u); state = STATE_READY;
 }
@@ -291,6 +297,9 @@ static void move_paddle(int8_t direction)
     if (next == paddle_x) return;
     paddle(0u); if (state == STATE_READY) ball(0u);
     paddle_x = next;
+    paddle_motion = direction;
+    paddle_motion_deadline = (uint32_t)SysTick->CNT +
+                             PADDLE_MOTION_MS * DELAY_MS_TIME;
     if (state == STATE_READY)
         ball_x = (int8_t)(paddle_x + (PADDLE_W - BALL_SIZE) / 2u);
     paddle(1u); if (state == STATE_READY) ball(1u);
@@ -319,6 +328,45 @@ static void end_screen(const char *message, uint8_t x, state_t next)
     clear_screen(); text(message, x, 28u); state = next;
 }
 
+static void draw_fireworks(uint8_t frame, uint8_t on)
+{
+    static const uint8_t centers[4] = {20u, 15u, 107u, 47u};
+    uint8_t burst;
+    uint8_t radius = (uint8_t)(frame * 2u);
+    for (burst = 0; burst < 2u; ++burst) {
+        uint8_t cx = centers[burst * 2u];
+        uint8_t cy = centers[burst * 2u + 1u];
+        pixel(cx, (uint8_t)(cy - radius), on);
+        pixel(cx, (uint8_t)(cy + radius), on);
+        pixel((uint8_t)(cx - radius), cy, on);
+        pixel((uint8_t)(cx + radius), cy, on);
+        pixel((uint8_t)(cx - frame), (uint8_t)(cy - frame), on);
+        pixel((uint8_t)(cx + frame), (uint8_t)(cy - frame), on);
+        pixel((uint8_t)(cx - frame), (uint8_t)(cy + frame), on);
+        pixel((uint8_t)(cx + frame), (uint8_t)(cy + frame), on);
+    }
+}
+
+static void start_game_clear(void)
+{
+    clear_screen();
+    text("GAME CLEAR", 34u, 28u);
+    firework_frame = 1u;
+    draw_fireworks(firework_frame, 1u);
+    firework_deadline = (uint32_t)SysTick->CNT +
+                        FIREWORK_INTERVAL_MS * DELAY_MS_TIME;
+    state = STATE_GAME_CLEAR;
+}
+
+static void update_fireworks(void)
+{
+    draw_fireworks(firework_frame, 0u);
+    firework_frame = firework_frame >= 4u ? 1u : (uint8_t)(firework_frame + 1u);
+    draw_fireworks(firework_frame, 1u);
+    firework_deadline = (uint32_t)SysTick->CNT +
+                        FIREWORK_INTERVAL_MS * DELAY_MS_TIME;
+}
+
 static void update_ball(void)
 {
     int8_t nx = ball_x;
@@ -326,7 +374,7 @@ static void update_ball(void)
     uint8_t row, col;
 
     /* Three horizontal pixels per five vertical pixels is about 59 degrees. */
-    ball_x_accumulator = (uint8_t)(ball_x_accumulator + 3u);
+    ball_x_accumulator = (uint8_t)(ball_x_accumulator + ball_x_rate);
     if (ball_x_accumulator >= 5u) {
         ball_x_accumulator = (uint8_t)(ball_x_accumulator - 5u);
         nx = (int8_t)(ball_x + ball_dx);
@@ -341,9 +389,16 @@ static void update_ball(void)
         nx + (int8_t)BALL_SIZE > (int8_t)paddle_x &&
         nx < (int8_t)(paddle_x + PADDLE_W)) {
         ball_dy = -1;
-        if (nx + (int8_t)(BALL_SIZE / 2u) <
-            (int8_t)(paddle_x + PADDLE_W / 2u)) ball_dx = -1;
-        else ball_dx = 1;
+        if (paddle_motion) {
+            ball_dx = paddle_motion;
+            ball_x_rate = 4u;
+        } else {
+            if (nx + (int8_t)(BALL_SIZE / 2u) <
+                (int8_t)(paddle_x + PADDLE_W / 2u)) ball_dx = -1;
+            else ball_dx = 1;
+            ball_x_rate = 3u;
+        }
+        ball_x_accumulator = 0u;
         ny = (int8_t)(PADDLE_Y - BALL_SIZE);
     }
     if (find_brick(nx, ny, &row, &col)) {
@@ -352,11 +407,11 @@ static void update_ball(void)
              (uint8_t)(row * BRICK_STEP_Y + 1u), BRICK_W, BRICK_H, 0u);
         --bricks_left; ball_dy = (int8_t)-ball_dy;
         ny = (int8_t)(ball_y + ball_dy); vibrate(50u, 30u);
-        if (!bricks_left) { end_screen("GAME CLEAR", 34u, STATE_GAME_CLEAR); return; }
+        if (!bricks_left) { start_game_clear(); return; }
     }
     ball_x = nx; ball_y = ny;
     if (ball_y >= (int8_t)H) {
-        end_screen("GAME OVER", 37u, STATE_GAME_OVER); vibrate(80u, 2000u); return;
+        end_screen("GAME OVER", 37u, STATE_GAME_OVER); vibrate(80u, 1500u); return;
     }
     ball(1u);
 }
@@ -401,7 +456,8 @@ int main(void)
         if (key_count == 20u && !key) { pressed = 1u; key_count = 21u; }
         if (pressed && state == STATE_READY) {
             ball_dx = paddle_x < (W - PADDLE_W) / 2u ? 1 : -1;
-            ball_dy = -1; ball_x_accumulator = 0u; state = STATE_PLAYING;
+            ball_dy = -1; ball_x_accumulator = 0u; ball_x_rate = 3u;
+            state = STATE_PLAYING;
             ball_deadline = (uint32_t)SysTick->CNT + BALL_INTERVAL_MS * DELAY_MS_TIME;
         } else if (pressed && (state == STATE_GAME_OVER || state == STATE_GAME_CLEAR)) {
             reset_game();
@@ -411,6 +467,12 @@ int main(void)
             ball_deadline = (uint32_t)SysTick->CNT + BALL_INTERVAL_MS * DELAY_MS_TIME;
             update_ball();
         }
+        if (paddle_motion &&
+            (int32_t)((uint32_t)SysTick->CNT - paddle_motion_deadline) >= 0)
+            paddle_motion = 0;
+        if (state == STATE_GAME_CLEAR &&
+            (int32_t)((uint32_t)SysTick->CNT - firework_deadline) >= 0)
+            update_fireworks();
         motor_tick();
         if (dirty && !oled_flush()) fail();
         Delay_Ms(1);
