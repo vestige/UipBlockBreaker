@@ -38,7 +38,7 @@ CH32FUN_ROOT := $(UIAP_WORKSPACE)/deps/ch32fun
 CH32FUN := $(CH32FUN_ROOT)/ch32fun
 MINICHLINK := $(UIAP_RUNTIME)/bin
 
-TARGET := oled_rotary_test
+TARGET := block_breaker
 TARGET_MCU := CH32V003
 MCU_PACKAGE := 1
 PREFIX := $(UIAP_TOOLCHAIN_BIN)/riscv-none-elf
