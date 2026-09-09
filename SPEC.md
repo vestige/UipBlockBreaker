@@ -109,10 +109,6 @@ OLEDのVDDを誤った3.3V位置へ挿すとACKせず表示できないため、
 
 ## ビルド
 
-Makefileは`<devkit>/workspace/exercises/block_breaker`という配置からDevkitルート、
-macOS用ランタイム、同梱RISC-Vツールチェーンを自動検出する。そのため
-`start-uiap.command`を先に実行せず、このフォルダから直接実行できる。
-
 ```text
 make
 make size
