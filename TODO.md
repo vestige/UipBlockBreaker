@@ -16,7 +16,11 @@
 - [x] 起動コマンドなしで`make flash`が正しい書き込みコマンドを生成することを確認する。
 - [x] このフォルダを独立したGitリポジトリとして`main`ブランチで初期化する。
 - [x] 必要な9ファイルをGitの初回コミット候補としてステージする。
-- [ ] Gitのメールアドレスを設定し、初回コミットを作成する。
+- [x] Gitのメールアドレスをリポジトリへ設定し、初回コミットを作成してGitHubへpushする。
+- [x] `workspace/exercises`への固定配置をMakefileから取り除く。
+- [x] Devkit内では上位フォルダを探索してDevkitルートを自動検出する。
+- [x] Devkit外ではGit管理外の`local.mk`でDevkitルートを指定できるようにする。
+- [x] 対応環境をApple Silicon搭載Macに限定し、WindowsとIntel Macを対象外と明記する。
 
 ## ゲーム実装
 

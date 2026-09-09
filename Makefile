@@ -1,8 +1,26 @@
 .DEFAULT_GOAL := all
 
-# This project lives at <devkit>/workspace/exercises/block_breaker.
-# Derive the bundled environment so make also works outside start-uiap.command.
-UIAP_DEVKIT_ROOT ?= $(abspath $(CURDIR)/../../..)
+# A local, untracked override allows this repository to live outside the Devkit.
+-include local.mk
+
+# When the repository is anywhere inside the Devkit, find its root automatically.
+ifndef UIAP_DEVKIT_ROOT
+UIAP_DEVKIT_ROOT := $(shell dir="$(CURDIR)"; while [ "$$dir" != "/" ]; do if [ -f "$$dir/scripts/env.sh" ] && [ -f "$$dir/workspace/deps/ch32fun/ch32fun/ch32fun.mk" ] && [ -x "$$dir/runtime/mac/toolchain/bin/riscv-none-elf-gcc" ]; then printf '%s' "$$dir"; break; fi; dir=$$(dirname "$$dir"); done)
+endif
+
+ifeq ($(strip $(UIAP_DEVKIT_ROOT)),)
+$(error UIAP Devkit was not found. Copy local.mk.example to local.mk and set UIAP_DEVKIT_ROOT)
+endif
+
+HOST_OS := $(shell uname -s)
+HOST_ARCH := $(shell uname -m)
+ifneq ($(HOST_OS),Darwin)
+$(error This project currently supports macOS only)
+endif
+ifneq ($(HOST_ARCH),arm64)
+$(error This project currently requires Apple Silicon arm64)
+endif
+
 UIAP_PLATFORM ?= mac
 UIAP_WORKSPACE ?= $(UIAP_DEVKIT_ROOT)/workspace
 UIAP_RUNTIME ?= $(UIAP_DEVKIT_ROOT)/runtime/mac

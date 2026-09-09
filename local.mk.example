@@ -1,0 +1,3 @@
+# Copy this file to local.mk only when the repository is outside the UIAP Devkit.
+# Do not commit local.mk; it may contain a path specific to your computer.
+UIAP_DEVKIT_ROOT := /path/to/uiap-devkit-macarm64

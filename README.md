@@ -20,13 +20,19 @@ UIAPduino、SSD1306 OLED、ロータリーエンコーダー、振動モジュ�
 
 ## ビルドと書き込み
 
+対応環境はApple Silicon搭載Macです。WindowsおよびIntel Macでは動作確認しておらず、
+現在の同梱ツールも対象外です。
+
+このリポジトリがUIAP Devkit内のどこかにあれば、Makefileが上位フォルダを探索して
+Devkitを自動検出します。`workspace/exercises`へ固定する必要はありません。
+
 ```text
 make
 make size
 make flash
 ```
 
-Makefileは現在位置からDevkitルート、macOS用ランタイム、RISC-Vツールチェーンを
-自動検出します。このフォルダをDevkit外へ単独で移動した場合は動作しません。
+Devkit外へcloneした場合は、`local.mk.example`を`local.mk`へコピーし、
+`UIAP_DEVKIT_ROOT`へ自分のDevkitルートを設定します。`local.mk`はGitへ登録されません。
 
 発熱、異臭、停止しない振動、USB切断があれば直ちにUSBを外してください。

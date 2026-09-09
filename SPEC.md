@@ -109,6 +109,13 @@ OLEDのVDDを誤った3.3V位置へ挿すとACKせず表示できないため、
 
 ## ビルド
 
+対応環境はApple Silicon搭載Macとする。WindowsおよびIntel Macは未検証ではなく、
+現行のmacOS arm64用Devkitランタイムを使用できないためサポート対象外とする。
+
+Makefileは現在位置から上位フォルダを探索し、UIAP Devkitを自動検出する。
+`workspace/exercises`という固定配置は要求しない。リポジトリがDevkit外にある場合は、
+Git管理外の`local.mk`で`UIAP_DEVKIT_ROOT`を指定する。
+
 ```text
 make
 make size
@@ -116,4 +123,3 @@ make flash
 ```
 
 `make flash`の前にUIAPduinoを書き込み待機状態へする。
-このフォルダをDevkit外へ単独で移動する構成は対象外とする。
