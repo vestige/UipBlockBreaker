@@ -29,7 +29,7 @@
 
 ## 将来の任意機能
 
-- [ ] GAME CLEAR時の振動パターンを追加する。
-- [ ] 得点表示を追加する。
-- [ ] ブロック減少に合わせてボールを加速する。
-- [ ] バーの衝突位置による反射角をさらに細かくする。
+- [ ] [Issue #2: GAME CLEAR時の振動パターンを追加する](https://github.com/vestige/UipBlockBreaker/issues/2)
+- [ ] [Issue #3: ゲーム画面に得点表示を追加する](https://github.com/vestige/UipBlockBreaker/issues/3)
+- [ ] [Issue #4: ブロック減少に合わせてボールを加速する](https://github.com/vestige/UipBlockBreaker/issues/4)
+- [ ] [Issue #5: バーの衝突位置による反射角を細かくする](https://github.com/vestige/UipBlockBreaker/issues/5)
