@@ -30,6 +30,7 @@ typedef enum { STATE_READY, STATE_PLAYING, STATE_GAME_OVER, STATE_GAME_CLEAR } s
 static uint8_t fb[1024], dirty, dirty_first[8], dirty_last[8];
 static uint8_t bricks[BRICK_ROWS][BRICK_COLS];
 static uint8_t paddle_x, bricks_left;
+static uint8_t paddle_sweep_left, paddle_sweep_right;
 static int8_t ball_x, ball_y, ball_dx, ball_dy;
 static uint8_t ball_x_accumulator, ball_x_rate;
 static int8_t paddle_motion;
@@ -278,6 +279,8 @@ static void reset_game(void)
                  (uint8_t)(row * BRICK_STEP_Y + 1u), BRICK_W, BRICK_H, 1u);
         }
     paddle_x = (W - PADDLE_W) / 2u;
+    paddle_sweep_left = paddle_x;
+    paddle_sweep_right = (uint8_t)(paddle_x + PADDLE_W);
     ball_x = (int8_t)(paddle_x + (PADDLE_W - BALL_SIZE) / 2u);
     ball_y = PADDLE_Y - BALL_SIZE;
     ball_dx = 0; ball_dy = 0; ball_x_accumulator = 0u; ball_x_rate = 3u;
@@ -289,6 +292,7 @@ static void reset_game(void)
 static void move_paddle(int8_t direction)
 {
     uint8_t next = paddle_x;
+    uint8_t previous = paddle_x;
     if (direction > 0 && paddle_x < W - PADDLE_W)
         next = paddle_x > W - PADDLE_W - PADDLE_STEP ?
                W - PADDLE_W : paddle_x + PADDLE_STEP;
@@ -297,6 +301,12 @@ static void move_paddle(int8_t direction)
     if (next == paddle_x) return;
     paddle(0u); if (state == STATE_READY) ball(0u);
     paddle_x = next;
+    if (previous < paddle_sweep_left) paddle_sweep_left = previous;
+    if (paddle_x < paddle_sweep_left) paddle_sweep_left = paddle_x;
+    if ((uint8_t)(previous + PADDLE_W) > paddle_sweep_right)
+        paddle_sweep_right = (uint8_t)(previous + PADDLE_W);
+    if ((uint8_t)(paddle_x + PADDLE_W) > paddle_sweep_right)
+        paddle_sweep_right = (uint8_t)(paddle_x + PADDLE_W);
     paddle_motion = direction;
     paddle_motion_deadline = (uint32_t)SysTick->CNT +
                              PADDLE_MOTION_MS * DELAY_MS_TIME;
@@ -386,8 +396,8 @@ static void update_ball(void)
     if (ny < 0) { ball_dy = 1; ny = (int8_t)(ball_y + 1); }
     if (ball_dy > 0 && ny + (int8_t)BALL_SIZE > (int8_t)PADDLE_Y &&
         ball_y + (int8_t)BALL_SIZE <= (int8_t)PADDLE_Y &&
-        nx + (int8_t)BALL_SIZE > (int8_t)paddle_x &&
-        nx < (int8_t)(paddle_x + PADDLE_W)) {
+        nx + (int8_t)BALL_SIZE > (int8_t)paddle_sweep_left &&
+        nx < (int8_t)paddle_sweep_right) {
         ball_dy = -1;
         if (paddle_motion) {
             ball_dx = paddle_motion;
@@ -410,6 +420,8 @@ static void update_ball(void)
         if (!bricks_left) { start_game_clear(); return; }
     }
     ball_x = nx; ball_y = ny;
+    paddle_sweep_left = paddle_x;
+    paddle_sweep_right = (uint8_t)(paddle_x + PADDLE_W);
     if (ball_y >= (int8_t)H) {
         end_screen("GAME OVER", 37u, STATE_GAME_OVER); vibrate(80u, 1500u); return;
     }
