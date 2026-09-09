@@ -20,10 +20,7 @@ UIAPduino、SSD1306 OLED、ロータリーエンコーダー、振動モジュ�
 
 ## ビルドと書き込み
 
-`start-uiap.command`を先に実行しなくても、このフォルダから直接実行できます。
-
 ```text
-cd /Users/vestige/Spike/uip/uiap-devkit-macarm64/workspace/exercises/block_breaker
 make
 make size
 make flash
