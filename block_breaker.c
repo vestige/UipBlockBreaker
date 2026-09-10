@@ -396,8 +396,8 @@ static void update_ball(void)
     if (ny < 0) { ball_dy = 1; ny = (int8_t)(ball_y + 1); }
     if (ball_dy > 0 && ny + (int8_t)BALL_SIZE > (int8_t)PADDLE_Y &&
         ball_y + (int8_t)BALL_SIZE <= (int8_t)PADDLE_Y &&
-        nx + (int8_t)BALL_SIZE > (int8_t)paddle_sweep_left &&
-        nx < (int8_t)paddle_sweep_right) {
+        (uint8_t)(nx + (int8_t)BALL_SIZE) > paddle_sweep_left &&
+        (uint8_t)nx < paddle_sweep_right) {
         ball_dy = -1;
         if (paddle_motion) {
             ball_dx = paddle_motion;

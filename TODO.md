@@ -18,6 +18,7 @@
 - [x] 約60度で発射し、移動中のバーに合わせて反射方向と角度を変える。
 - [x] 移動中のバーによる反射が安定し、操作感に問題がないことを実機確認する。
 - [x] [Issue #6: 右移動中のバーのすり抜けを通過範囲判定で修正する](https://github.com/vestige/UipBlockBreaker/issues/6)
+- [x] [Issue #7: 右端の境界値変換によるボールのすり抜けを修正する](https://github.com/vestige/UipBlockBreaker/issues/7)
 - [x] Devkit内外から`make`、`make size`、`make flash`を使用できる構成にする。
 - [x] ゲーム本体を警告なしでビルドし、FLASHとRAMの使用量を確認する。
 - [x] KEYを押し続けても、発射や再スタートが複数回発生しない。
